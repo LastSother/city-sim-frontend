@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import _ from 'lodash'
 import { FaTimes, FaPaperPlane } from 'react-icons/fa'
+import { wsUrl } from '../config'
 
 export default function ChatWindow({ backend, npc, onClose }) {
   const [ws, setWs] = useState(null)
@@ -11,8 +12,7 @@ export default function ChatWindow({ backend, npc, onClose }) {
   useEffect(() => {
     if (!npc) return
     if (ws) ws.close()
-    const url = (backend.replace('http', 'ws')) + `/ws/npc_${npc.id}`
-    const socket = new WebSocket(url)
+    const socket = new WebSocket(wsUrl(`npc_${npc.id}`))
     socket.onopen = () => console.log('Чат подключён')
     socket.onmessage = (evt) => {
       try {
@@ -21,6 +21,8 @@ export default function ChatWindow({ backend, npc, onClose }) {
           setMessages(prev => [...prev, { from: m.data.from, text: m.data.text }])
         } else if (m.type === 'command') {
           setMessages(prev => [...prev, { from: 'system', text: m.data.reply }])
+        } else if (m.type === 'error') {
+          setMessages(prev => [...prev, { from: 'system', text: m.data }])
         }
       } catch (e) {
         console.error('Ошибка WebSocket:', e)
@@ -30,7 +32,7 @@ export default function ChatWindow({ backend, npc, onClose }) {
     fetch(`${backend}/chat_history/${npc.id}`)
       .then(r => r.json())
       .then(hist => {
-        setMessages(hist.map(h => ({ from: h.role === 'user' ? 'player' : 'npc', text: h.content })))
+        setMessages(hist.map(h => ({ from: h.role === 'assistant' ? 'npc' : 'player', text: h.content })))
       })
       .catch(err => console.error('Ошибка загрузки истории:', err))
     return () => socket.close()
@@ -77,7 +79,7 @@ export default function ChatWindow({ backend, npc, onClose }) {
           <div ref={messagesEndRef} />
         </div>
         <div className="flex gap-2">
-          <input ref={inputRef} className="flex-1 border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-city-blue" placeholder="Напишите сообщение..." />
+          <input ref={inputRef} className="flex-1 border border-gray-200 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-city-blue" placeholder="Напишите сообщение..." />
           <button onClick={sendMessage} className="bg-city-blue text-white p-2 rounded-lg hover:bg-blue-600 flex items-center">
             <FaPaperPlane />
           </button>

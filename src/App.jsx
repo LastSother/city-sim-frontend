@@ -5,13 +5,13 @@ import NewsFeed from './components/NewsFeed'
 import Weather from './components/Weather'
 import MayorPanel from './components/MayorPanel'
 import { toast } from 'react-toastify'
-
-const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+import { BACKEND, wsUrl } from './config'
+import { normalizeWeather } from './weather'
 
 export default function App() {
   const [npcs, setNpcs] = useState([])
   const [selected, setSelected] = useState(null)
-  const [weather, setWeather] = useState('солнечно')
+  const [weather, setWeather] = useState('sunny')
   const [isMayor, setIsMayor] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -20,15 +20,20 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [mapRes, weatherRes] = await Promise.all([
+        const [mapRes, weatherRes, mayorRes] = await Promise.all([
           fetch(BACKEND + '/map'),
-          fetch(BACKEND + '/weather')
+          fetch(BACKEND + '/weather'),
+          fetch(BACKEND + '/mayor').catch(() => null)
         ])
         if (!mapRes.ok || !weatherRes.ok) throw new Error('Ошибка загрузки данных')
         const mapData = await mapRes.json()
         const weatherData = await weatherRes.json()
         setNpcs(mapData)
-        setWeather(weatherData.current || 'солнечно')
+        setWeather(normalizeWeather(weatherData.current))
+        if (mayorRes && mayorRes.ok) {
+          const mayor = await mayorRes.json()
+          setIsMayor(Boolean(mayor.is_player))
+        }
         setLoading(false)
       } catch (error) {
         console.error('Ошибка загрузки:', error)
@@ -38,27 +43,37 @@ export default function App() {
     }
     fetchData()
 
-    const ws = new WebSocket((BACKEND.replace('http', 'ws')) + '/ws/map')
-    ws.onopen = () => console.log('WebSocket карты открыт')
-    ws.onmessage = (evt) => {
+    // Бэкенд рассылает события по темам: map_update (перемещения NPC) и news (новости, погода, выборы)
+    const mapWs = new WebSocket(wsUrl('map_update'))
+    mapWs.onmessage = (evt) => {
       try {
         const m = JSON.parse(evt.data)
         if (m.type === 'map_update') {
           setNpcs(prev => prev.map(p => p.id === m.data.id ? { ...p, x: m.data.x, y: m.data.y, state: { ...p.state, location: m.data.location } } : p))
-        } else if (m.type === 'news') {
-          toast.info(`${m.data.title}: ${m.data.content}`)
-          if (m.data.title.includes('Погода')) setWeather(m.data.content.split(' ')[1].toLowerCase())
-          if (m.data.title.includes('Выборы')) {
-            const winner = m.data.content.split(' ')[2]
-            setIsMayor(winner === 'Игрок')
-          }
         }
       } catch (e) {
         console.error('WebSocket ошибка:', e)
       }
     }
-    wsRef.current = ws
-    return () => ws.close()
+    const newsWs = new WebSocket(wsUrl('news'))
+    newsWs.onmessage = (evt) => {
+      try {
+        const m = JSON.parse(evt.data)
+        if (m.type !== 'news') return
+        toast.info(`${m.data.title}: ${m.data.content}`)
+        if (m.data.weather) {
+          setWeather(normalizeWeather(m.data.weather))
+        } else if (m.data.title.includes('Погода')) {
+          // Совместимость со старым форматом «Теперь rainy.»
+          setWeather(normalizeWeather(m.data.content.split(' ')[1]))
+        }
+        if ('is_player' in m.data) setIsMayor(Boolean(m.data.is_player))
+      } catch (e) {
+        console.error('WebSocket ошибка:', e)
+      }
+    }
+    wsRef.current = { mapWs, newsWs }
+    return () => { mapWs.close(); newsWs.close() }
   }, [])
 
   if (loading) return <div className="text-center py-10">Загрузка...</div>
