@@ -1,6 +1,6 @@
 # Городской симулятор: фронтенд
 
-Vite + React фронтенд для симуляции города: карта, чат с NPC, новости, погода и панель мэра. Бэкенд — репозиторий `LastSother/backend`.
+Vite + React фронтенд для симуляции города: карта, чат с NPC, новости, погода и панель мэра. Бэкенд — репозиторий [`LastSother/city-sim-backend`](https://github.com/LastSother/city-sim-backend).
 
 ## Стек
 - React 18, Vite 4
