@@ -1,12 +1,14 @@
 import React from 'react'
+import { normalizeWeather } from '../weather'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { FaHome, FaShoppingCart, FaBriefcase, FaTree, FaCity, FaCoffee, FaShieldAlt, FaNewspaper, FaCar, FaChalkboardTeacher, FaLaptopCode, FaUserMd, FaWrench, FaPaintBrush, FaStore, FaGraduationCap, FaBreadSlice, FaWalking, FaUser } from 'react-icons/fa'
 
 export default function MapView({ npcs, onSelect, weather }) {
-  const bgClass = weather === 'дождь' ? 'bg-gray-300' : weather === 'буря' ? 'bg-red-200' : 'bg-green-200'
+  const BG = { sunny: 'bg-green-200', rainy: 'bg-gray-300', stormy: 'bg-red-200' }
+  const bgClass = BG[normalizeWeather(weather)]
 
   const getNpcIcon = (profession) => {
-    if (profession.includes('Бариста')) return <FaCoffee className="text-brown-500" />
+    if (profession.includes('Бариста')) return <FaCoffee className="text-amber-700" />
     if (profession.includes('Полицейский')) return <FaShieldAlt className="text-blue-500" />
     if (profession.includes('Журналист')) return <FaNewspaper className="text-yellow-500" />
     if (profession.includes('Таксист')) return <FaCar className="text-gray-500" />
@@ -26,19 +28,19 @@ export default function MapView({ npcs, onSelect, weather }) {
     <TransformWrapper minScale={0.5} maxScale={3} initialScale={1}>
       <TransformComponent wrapperStyle={{ width: '100%' }} contentStyle={{ width: '100%' }}>
         <div className={`map ${bgClass} w-[1200px] h-[600px]`}>
-          <div className="location bg-blue-300 left-0 top-0 w-[200px] h-[200px]">
+          <div className="location bg-blue-300/70 left-0 top-0 w-[200px] h-[200px]">
             <FaHome className="text-2xl mr-2" /> Дом
           </div>
-          <div className="location bg-yellow-300 left-[200px] top-[200px] w-[200px] h-[200px]">
+          <div className="location bg-yellow-300/70 left-[200px] top-[200px] w-[200px] h-[200px]">
             <FaShoppingCart className="text-2xl mr-2" /> Магазин
           </div>
-          <div className="location bg-purple-300 left-[400px] top-0 w-[200px] h-[200px]">
+          <div className="location bg-purple-300/70 left-[400px] top-0 w-[200px] h-[200px]">
             <FaBriefcase className="text-2xl mr-2" /> Работа
           </div>
-          <div className="location bg-green-300 left-[600px] top-[200px] w-[200px] h-[200px]">
+          <div className="location bg-green-300/70 left-[600px] top-[200px] w-[200px] h-[200px]">
             <FaTree className="text-2xl mr-2" /> Парк
           </div>
-          <div className="location bg-red-300 left-0 top-[200px] w-[200px] h-[200px]">
+          <div className="location bg-red-300/70 left-0 top-[200px] w-[200px] h-[200px]">
             <FaCity className="text-2xl mr-2" /> Мэрия
           </div>
           {npcs.length > 0 ? (

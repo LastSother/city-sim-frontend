@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { wsUrl } from '../config'
 
 export default function NewsFeed({ backend }) {
   const [news, setNews] = useState([])
@@ -15,7 +16,7 @@ export default function NewsFeed({ backend }) {
     }
     fetchNews()
     const interval = setInterval(fetchNews, 30000)
-    const ws = new WebSocket((backend.replace('http', 'ws')) + '/ws/news')
+    const ws = new WebSocket(wsUrl('news'))
     ws.onmessage = (e) => {
       try {
         const m = JSON.parse(e.data)
