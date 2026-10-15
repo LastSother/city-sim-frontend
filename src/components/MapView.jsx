@@ -24,7 +24,7 @@ export default function MapView({ npcs, onSelect, weather }) {
 
   return (
     <TransformWrapper minScale={0.5} maxScale={3} initialScale={1}>
-      <TransformComponent>
+      <TransformComponent wrapperStyle={{ width: '100%' }} contentStyle={{ width: '100%' }}>
         <div className={`map ${bgClass} w-[1200px] h-[600px]`}>
           <div className="location bg-blue-300 left-0 top-0 w-[200px] h-[200px]">
             <FaHome className="text-2xl mr-2" /> Дом
